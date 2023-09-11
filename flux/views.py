@@ -30,9 +30,9 @@ def index(request):
 
 @csrf_exempt
 def reg(request):
-	user_id = request.GET["userId"]
-	app_id = request.GET["nglAppId"]
-	device_id = request.GET["deviceId"]
+	user_id = request.POST["userId"]
+	app_id = request.POST["nglAppId"]
+	device_id = request.POST["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -81,9 +81,9 @@ def reg(request):
 
 @csrf_exempt
 def heartbeat(request):
-	user_id = request.GET["userId"]
-	app_id = request.GET["nglAppId"]
-	device_id = request.GET["deviceId"]
+	user_id = request.POST["userId"]
+	app_id = request.POST["nglAppId"]
+	device_id = request.POST["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -131,9 +131,9 @@ def heartbeat(request):
 
 @csrf_exempt
 def dereg(request):
-	user_id = request.GET["userId"]
-	app_id = request.GET["nglAppId"]
-	device_id = request.GET["deviceId"]
+	user_id = request.POST["userId"]
+	app_id = request.POST["nglAppId"]
+	device_id = request.POST["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
