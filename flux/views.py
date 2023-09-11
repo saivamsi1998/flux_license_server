@@ -5,9 +5,10 @@ from django.utils import timezone
 from .models import User, Offer, OfferAppMap, OfferUserMap, License, LicenseAppMap
 
 import json
+from . import scheduler
 
-HEARTBEAT_TIME = 60 #min
-BUFFER_TIME = 5 #min
+HEARTBEAT_TIME = 25 #secs
+BUFFER_TIME = 5 #secs
 
 def json_response(err_msg="", require_profile_status = True):
 	json_obj = {}
@@ -29,9 +30,9 @@ def index(request):
 
 @csrf_exempt
 def reg(request):
-	user_id = request.POST["userId"]
-	app_id = request.POST["nglAppId"]
-	device_id = request.POST["deviceId"]
+	user_id = request.GET["userId"]
+	app_id = request.GET["nglAppId"]
+	device_id = request.GET["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -70,15 +71,19 @@ def reg(request):
 		licenseappmap_entry.save()
 	except (KeyError, LicenseAppMap.DoesNotExist):
 		license.licenseappmap_set.create(app_id = app_id, last_active_time = timezone.now())
-	print("Created/Updated LicenseAppMap entry due to expired heartbeat for (license_id, user_id, device_id, app_id) =  (%s,%s,%s,%s)"%(license_id, user_id, device_id, app_id))
+	print("Created/Updated LicenseAppMap entry due to reg for (license_id, user_id, device_id, app_id) =  (%s,%s,%s,%s)"%(license_id, user_id, device_id, app_id))
 	# TODO: Schedule next heartbeat check and remove entry
+	scheduler.schedule_task(delay=HEARTBEAT_TIME+BUFFER_TIME,func=dereg_by_server_if_req,keyword_args={
+				'user_id': user_id,
+				'device_id': device_id,
+				'app_id': app_id})
 	return json_response("success")
 
 @csrf_exempt
 def heartbeat(request):
-	user_id = request.POST["userId"]
-	app_id = request.POST["nglAppId"]
-	device_id = request.POST["deviceId"]
+	user_id = request.GET["userId"]
+	app_id = request.GET["nglAppId"]
+	device_id = request.GET["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -117,15 +122,18 @@ def heartbeat(request):
 		licenseappmap_entry.save()
 	except (KeyError, LicenseAppMap.DoesNotExist):
 		license.licenseappmap_set.create(app_id = app_id, last_active_time = timezone.now())
-	print("Created/Updated LicenseAppMap entry due to expired heartbeat for (license_id, user_id, device_id, app_id) =  (%s,%s,%s,%s)"%(license_id, user_id, device_id, app_id))
-	# TODO: Schedule next heartbeat check and remove entry
+	print("Created/Updated LicenseAppMap entry due to heartbeat for (license_id, user_id, device_id, app_id) =  (%s,%s,%s,%s)"%(license_id, user_id, device_id, app_id))
+	scheduler.schedule_task(delay=HEARTBEAT+BUFFER_TIME+BUFFER_TIME,func=dereg_by_server_if_req,keyword_args={
+				'user_id': user_id,
+				'device_id': device_id,
+				'app_id': app_id})
 	return json_response("success")
 
 @csrf_exempt
 def dereg(request):
-	user_id = request.POST["userId"]
-	app_id = request.POST["nglAppId"]
-	device_id = request.POST["deviceId"]
+	user_id = request.GET["userId"]
+	app_id = request.GET["nglAppId"]
+	device_id = request.GET["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -167,8 +175,9 @@ def dereg(request):
 			print("Released Pool License entry for (license_id, user_id, device_id) =  (%s,%s,%s)"%(license_id, user_id, device_id))
 	return json_response("success", False)
 
-def dereg_by_server_if_req(request, user_id, device_id, app_id):
+def dereg_by_server_if_req(user_id, device_id, app_id):
 	# verify if the user, app is part of the license
+	print("dereg by server called")
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
 	qs2 = OfferAppMap.objects.filter(app_id = app_id).values("offer_id")
 	qs = qs1.intersection(qs2)
@@ -194,7 +203,7 @@ def dereg_by_server_if_req(request, user_id, device_id, app_id):
 		# Remove license app map entry
 		try:
 			licenseappmap_entry = license.licenseappmap_set.get(app_id = app_id)
-			if (licenseappmap_entry.last_active_time +  timezone.timedelta(minutes = HEARTBEAT) < timezone.now()):
+			if (licenseappmap_entry.last_active_time +  timezone.timedelta(seconds = HEARTBEAT_TIME) < timezone.now()):
 				licenseappmap_entry.delete()
 				print("Removed LicenseAppMap entry due to expired heartbeat for (license_id, user_id, device_id, app_id) =  (%s,%s,%s,%s)"%(license_id, user_id, device_id, app_id))
 		except (KeyError, LicenseAppMap.DoesNotExist):
