@@ -34,6 +34,7 @@ class License(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     device_id = models.CharField(max_length=500)
+    license_allocated_time = models.DateTimeField(auto_now_add=True,editable=False)
     def __str__(self):
         return self.user.email + "/" + self.device_id
 

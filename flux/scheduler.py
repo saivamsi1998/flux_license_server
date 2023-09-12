@@ -21,6 +21,7 @@ def default_logger(taskId):
 
 def start_scheduler():
     def background_thread():
-        _task_scheduler.enter(600,1,default_logger,kwargs={'taskId':'1'})
-        _task_scheduler.run()
+        while 1:
+            _task_scheduler.enter(600,1,default_logger,kwargs={'taskId':'1'})
+            _task_scheduler.run()
     threading.Thread(name='daemon', target=background_thread, daemon= True).start()

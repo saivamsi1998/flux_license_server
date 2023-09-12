@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
 
 from django.utils import timezone
 from .models import User, Offer, OfferAppMap, OfferUserMap, License, LicenseAppMap
@@ -216,3 +217,8 @@ def dereg_by_server_if_req(user_id, device_id, app_id):
 			offer.save()
 			print("Released Pool License entry for (license_id, user_id, device_id) =  (%s,%s,%s)"%(license_id, user_id, device_id))
 	return json_response("success")
+
+def get_admin_console(request):
+	licenses = License.objects.all()
+	offers = Offer.objects.all()
+	return render(request,"flux/admin_console.html",context={'licenses': licenses, 'offers' : offers})

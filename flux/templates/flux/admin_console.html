@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function filterLicenses(licenseId) {
+            var input, filter, table, tr, td, i, txtValue;
+            table = document.getElementById("active_license_table");
+            tr = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[4];
+                if (td) {
+                    txtValue = td.innerText;
+                    if (txtValue.indexOf(licenseId)>-1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+            let clear_button = document.getElementById("clear_filter");
+            clear_button.innerText = `Clear license filter ${licenseId}`;
+            clear_button.style.display = "";
+        }
+        function showAllLicenses(){
+            var input, filter, table, tr, td, i, txtValue;
+            table = document.getElementById("active_license_table");
+            tr = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            for (i = 0; i < tr.length; i++) {
+                tr[i].style.display = "";
+            }
+            document.getElementById("clear_filter").style.display = "none";
+        }
+
+    </script>
+</head>
+
+<body>
+    <h1 class="m-5 text-2xl">Welcome to flux admin console.</h1>
+
+    <div class="relative overflow-x-auto mb-4">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                    <th scope="col" class="px-6 py-3">License ID</th>
+                    <th scope="col" class="px-6 py-3">Max license count</th>
+                    <th scope="col" class="px-6 py-3">Allocated license count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for offer in offers %}
+                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                    <th class="px-6 py-4" onclick="filterLicenses(this.innerText)"> {{offer.license_id}} </td>
+                    <td class="px-6 py-4"> {{offer.max_license_count}}</td>
+                    <td class="px-6 py-4"> {{offer.active_license_count}} </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button id="clear_filter" 
+            class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
+            onclick="showAllLicenses()"
+            style="display: none;">
+        Button
+    </button>
+    <div class="relative overflow-x-auto mt-5">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400" id="active_license_table">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                    <th scope="col" class="px-6 py-3">EmailID</th>
+                    <th scope="col" class="px-6 py-3">User Name</th>
+                    <th scope="col" class="px-6 py-3">Device ID</th>
+                    <th scope="col" class="px-6 py-3">License Allocated time</th>
+                    <th scope="col" class="px-6 py-3">License ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for license in licenses %}
+                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                    <td class="px-6 py-4"> {{license.user.email}} </td>
+                    <td class="px-6 py-4"> {{license.user.firstname}} {{license.user.lastname}}</td>
+                    <td class="px-6 py-4"> {{license.device_id}} </td>
+                    <td class="px-6 py-4"> {{license.license_allocated_time}} </td>
+                    <td class="px-6 py-4"> {{license.offer.license_id}} </td>
+                </tr>
+                {% endfor %}
+        </table>
+    </div>
+</body>
+
+</html>
