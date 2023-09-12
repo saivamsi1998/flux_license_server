@@ -25,7 +25,7 @@ def json_response(err_msg="", profile_status = ""):
 
 @csrf_exempt 
 def index(request):
-	return json_response("Hello, world. You're at the flux index.")
+	return HttpResponse("Hello, world. You're at the flux index.")
 
 @csrf_exempt
 def reg(request):
