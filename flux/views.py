@@ -38,7 +38,7 @@ def reg(request):
 	qs2 = OfferAppMap.objects.filter(app_id = app_id).values("offer_id")
 	qs = qs1.intersection(qs2)
 	if(qs.count()==0):
-		return json_response("Offer isn't available for given (user_id, app_id)= (%s,%s)"%(user_id, app_id), "PROFILE_DENIED")
+		return json_response("Offer isn't available for given (user_id, app_id)= (%s,%s)"%(user_id, app_id), "PROFILE_NOT_IN_POOL")
 	offer = Offer.objects.get(pk = qs[0]['offer_id'])
 	print("Using offer: %s for given (user_id, app_id)= (%s,%s)"%(str(offer),user_id, app_id))
 	offerusermap_entry = offer.offerusermap_set.get(user__user_id = user_id)
@@ -89,7 +89,7 @@ def heartbeat(request):
 	qs2 = OfferAppMap.objects.filter(app_id = app_id).values("offer_id")
 	qs = qs1.intersection(qs2)
 	if(qs.count()==0):
-		return json_response("Offer isn't available for given (user_id, app_id)= (%s,%s)"%(user_id, app_id), "PROFILE_DENIED")
+		return json_response("Offer isn't available for given (user_id, app_id)= (%s,%s)"%(user_id, app_id), "PROFILE_NOT_IN_POOL")
 	offer = Offer.objects.get(pk = qs[0]['offer_id'])
 	print("Using offer: %s for given (user_id, app_id)= (%s,%s)"%(str(offer),user_id, app_id))
 	offerusermap_entry = offer.offerusermap_set.get(user__user_id = user_id)
