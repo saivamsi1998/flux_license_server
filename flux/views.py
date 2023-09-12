@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 
@@ -30,9 +30,9 @@ def index(request):
 
 @csrf_exempt
 def reg(request):
-	user_id = request.POST["userId"]
-	app_id = request.POST["nglAppId"]
-	device_id = request.POST["deviceId"]
+	user_id = request.GET["userId"]
+	app_id = request.GET["nglAppId"]
+	device_id = request.GET["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -81,9 +81,9 @@ def reg(request):
 
 @csrf_exempt
 def heartbeat(request):
-	user_id = request.POST["userId"]
-	app_id = request.POST["nglAppId"]
-	device_id = request.POST["deviceId"]
+	user_id = request.GET["userId"]
+	app_id = request.GET["nglAppId"]
+	device_id = request.GET["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -123,7 +123,7 @@ def heartbeat(request):
 	except (KeyError, LicenseAppMap.DoesNotExist):
 		license.licenseappmap_set.create(app_id = app_id, last_active_time = timezone.now())
 	print("Created/Updated LicenseAppMap entry due to heartbeat for (license_id, user_id, device_id, app_id) =  (%s,%s,%s,%s)"%(license_id, user_id, device_id, app_id))
-	scheduler.schedule_task(delay=HEARTBEAT+BUFFER_TIME+BUFFER_TIME,func=dereg_by_server_if_req,keyword_args={
+	scheduler.schedule_task(delay=HEARTBEAT_TIME+BUFFER_TIME,func=dereg_by_server_if_req,keyword_args={
 				'user_id': user_id,
 				'device_id': device_id,
 				'app_id': app_id})
@@ -131,9 +131,9 @@ def heartbeat(request):
 
 @csrf_exempt
 def dereg(request):
-	user_id = request.POST["userId"]
-	app_id = request.POST["nglAppId"]
-	device_id = request.POST["deviceId"]
+	user_id = request.GET["userId"]
+	app_id = request.GET["nglAppId"]
+	device_id = request.GET["deviceId"]
 
 	# verify if the user, app is part of the license
 	qs1 = OfferUserMap.objects.filter(user__user_id = user_id).values("offer_id")
@@ -222,3 +222,18 @@ def get_admin_console(request):
 	licenses = License.objects.all()
 	offers = Offer.objects.all()
 	return render(request,"flux/admin_console.html",context={'licenses': licenses, 'offers' : offers})
+
+@csrf_exempt
+def remove_license_for_user_offer(request:HttpRequest):
+	import json
+	post_data = json.loads(request.body.decode("utf-8"))
+	user_id = post_data["userId"]
+	offer_id = post_data["offerId"]
+	device_id = post_data["deviceId"]
+	print(f"userID {user_id} offer_id {offer_id} device_id {device_id}")
+	License.objects.filter(user__user_id=user_id,device_id=device_id,offer__license_id=offer_id).delete()
+
+	offer = Offer.objects.get(license_id = offer_id)
+	offer.active_license_count -= 1
+	offer.save()
+	return json_response("success")
